@@ -11,10 +11,10 @@ from tqdm import tqdm
 
 
 LENGTH=np.arange(1,4)
-MASS=np.arange(1,2)
+MASS=[1]
 B=[0.1,0.2,0.3,0.4,0.5,0]
-BATCH_SIZE=10
-OUT=30
+BATCH_SIZE=20
+OUT=10
 
 
 def generateData(L,m,b):
@@ -69,7 +69,7 @@ def simple_learned_sim(l, h_layer=100, out=OUT, reuse=False):
             scope.reuse_variables()
         l = l*tf.ones([BATCH_SIZE,1])
         t = slim.fully_connected(l,h_layer, activation_fn = tf.nn.relu)
-        t = slim.fully_connected(l, h_layer//2, activation_fn=tf.nn.relu)
+        t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.relu)
         t = slim.fully_connected(t,out, activation_fn = None)
         return t
 
@@ -118,7 +118,7 @@ def train():
     loss_s=[]
     loss_f=[]
 
-    for epoch in tqdm(range(100000)):
+    for epoch in tqdm(range(50000)):
 
         s,_,t_out = sess.run([simple_loss,s_optim,t_bar],feed_dict={})
         loss_s.append(s)
@@ -129,9 +129,9 @@ def train():
     plt.plot(t_out[0],'r-')
     plt.show()
 
-    for epoch in tqdm(range(100000)):
+    for epoch in tqdm(range(50000)):
 
-        f,_,x_out = sess.run([friction_loss, f_optim,x_bar],feed_dict={})
+        f,_,x_out = sess.run([friction_loss,f_optim, x_bar],feed_dict={})
         loss_f.append(f)
 
     plt.figure()
