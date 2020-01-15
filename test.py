@@ -63,23 +63,25 @@ def batch(l=[1], m=[1], b=[0]):
     return np.asarray(X), np.asarray(L), np.asarray(M), np.asarray(B),
 
 
-def simple_learned_sim(l, h_layer=100, out=OUT, reuse=False):
+def simple_learned_sim(l, h_layer=500, out=OUT, reuse=False):
     with tf.variable_scope("simple") as scope:
         if reuse:
             scope.reuse_variables()
         l = l * tf.ones([BATCH_SIZE, 1])
-        t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.relu)
-        t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.relu)
+        t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.sigmoid)
+        t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.sigmoid)
+        t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.sigmoid)
         t = slim.fully_connected(t, out, activation_fn=None)
         return t
 
 
-def z_encoder(x, y, h_layer=100, out=ZOUT, reuse=False):
+def z_encoder(x, y, h_layer=500, out=ZOUT, reuse=False):
     with tf.variable_scope("z_encoder") as scope:
         if reuse:
             scope.reuse_variables()
-        res = slim.fully_connected(x - y, h_layer, activation_fn=tf.nn.relu)
-        res = slim.fully_connected(res, h_layer, activation_fn=tf.nn.relu)
+        res = slim.fully_connected(x - y, h_layer, activation_fn=tf.nn.sigmoid)
+        res = slim.fully_connected(res, h_layer, activation_fn=tf.nn.sigmoid)
+        res = slim.fully_connected(res, h_layer, activation_fn=tf.nn.sigmoid)
         mu = slim.fully_connected(res, out, activation_fn=None)
         z_log_sigma_sq = slim.fully_connected(res, out, activation_fn=None)
 
@@ -88,15 +90,16 @@ def z_encoder(x, y, h_layer=100, out=ZOUT, reuse=False):
         return z,mu,z_log_sigma_sq
 
 
-def sim_with_friction(t, c, h_layer=100, out=OUT, reuse=False):
+def sim_with_friction(t, c, h_layer=500, out=OUT, reuse=False):
     with tf.variable_scope("with_friction") as scope:
         if reuse:
             scope.reuse_variables()
 
         tc = tf.concat([t, c], 1)
 
-        t = slim.fully_connected(tc, h_layer, activation_fn=tf.nn.relu)
-        t = slim.fully_connected(t, h_layer, activation_fn=tf.nn.relu)
+        t = slim.fully_connected(tc, h_layer, activation_fn=tf.nn.sigmoid)
+        t = slim.fully_connected(t, h_layer, activation_fn=tf.nn.sigmoid)
+        t = slim.fully_connected(t, h_layer, activation_fn=tf.nn.sigmoid)
         t = slim.fully_connected(t, out, activation_fn=None)
         return t
 
@@ -133,7 +136,7 @@ def train():
     loss_s = []
     loss_f = []
 
-    for epoch in tqdm(range(50000)):
+    for epoch in tqdm(range(100000)):
         s, _, t_out = sess.run([simple_loss, s_optim, t_bar], feed_dict={})
         loss_s.append(s)
 
@@ -143,7 +146,7 @@ def train():
     plt.plot(t_out[0], 'r-')
     plt.show()
 
-    for epoch in tqdm(range(50000)):
+    for epoch in tqdm(range(100000)):
         f, _, x_out = sess.run([friction_loss, f_optim, x_bar], feed_dict={})
         loss_f.append(f)
 
