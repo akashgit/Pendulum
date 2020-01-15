@@ -11,9 +11,9 @@ from scipy.integrate import solve_ivp
 import random
 from tqdm import tqdm
 
-LENGTH = np.arange(1, 4)
+LENGTH = np.asarray(np.arange(1,4,.1),dtype=np.float32)  #np.arange(1, 4, .1)
 MASS = [1]
-B = [0.1, 0.2, 0.3, 0.4, 0.5, 0]
+B = [0.1, 0.2, 0.3, 0.4, 0.5, 0.01]
 BATCH_SIZE = 20
 OUT = 100
 ZOUT = 200
@@ -67,10 +67,10 @@ def simple_learned_sim(l, h_layer=500, out=OUT, reuse=False):
     with tf.variable_scope("simple") as scope:
         if reuse:
             scope.reuse_variables()
-        l = l * tf.ones([BATCH_SIZE, 1])
+        l = tf.expand_dims(l,1,)
         t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.sigmoid)
-        t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.sigmoid)
-        t = slim.fully_connected(l, h_layer, activation_fn=tf.nn.sigmoid)
+        t = slim.fully_connected(t, h_layer, activation_fn=tf.nn.sigmoid)
+        t = slim.fully_connected(t, h_layer, activation_fn=tf.nn.sigmoid)
         t = slim.fully_connected(t, out, activation_fn=None)
         return t
 
@@ -113,8 +113,9 @@ def train():
     simple_loss = tf.reduce_mean(metrics.mean_squared_error(t_input, t_bar))
 
     x_input, l_input2, _, _ = batch(LENGTH, MASS, B)
-    c, mu, z_log_sigma_sq = z_encoder(x_input,t_bar)
+
     t_bar_sim = simple_learned_sim(l_input2, reuse=True)
+    c, mu, z_log_sigma_sq = z_encoder(x_input, t_bar_sim)
     x_bar = sim_with_friction(t_bar_sim, c)
 
     l_loss = -0.5 * tf.reduce_sum(1 + z_log_sigma_sq - tf.square(mu) - tf.exp(z_log_sigma_sq), 1)
@@ -136,7 +137,7 @@ def train():
     loss_s = []
     loss_f = []
 
-    for epoch in tqdm(range(100000)):
+    for epoch in tqdm(range(50000)):
         s, _, t_out = sess.run([simple_loss, s_optim, t_bar], feed_dict={})
         loss_s.append(s)
 
@@ -146,7 +147,7 @@ def train():
     plt.plot(t_out[0], 'r-')
     plt.show()
 
-    for epoch in tqdm(range(100000)):
+    for epoch in tqdm(range(50000)):
         f, _, x_out = sess.run([friction_loss, f_optim, x_bar], feed_dict={})
         loss_f.append(f)
 
